@@ -1,0 +1,16 @@
+---
+
+- name: Create shared directory
+  become: true
+  file:
+    path: /srv/data/shared
+    state: directory
+    group: jupyterhub-admins
+    mode: '0775'
+
+- name: Create symlink to shared dir for all new users
+  become: true
+  file:
+    src: /srv/data/shared
+    dest: /etc/skel/shared
+    state: link

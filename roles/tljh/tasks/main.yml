@@ -1,0 +1,124 @@
+---
+
+- name: Copy plugin
+  become: true
+  copy:
+    src: tljh_custom_plugin
+    dest: /opt
+
+- name: Install TLJH
+  become: true
+  shell: |
+    curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --version {{ tljh_version }} --show-progress-page --plugin /opt/tljh_custom_plugin
+
+- name: Make directory /etc/systemd/system/jupyterhub.service.d
+  become: true
+  file:
+    path: /etc/systemd/system/jupyterhub.service.d
+    state: directory
+
+- name: Modify jupyterhub service
+  become: true
+  copy:
+    dest: /etc/systemd/system/jupyterhub.service.d/override.conf
+    content: |
+      [Service]
+      PrivateTmp=no
+      PrivateDevices=no
+      ProtectKernelTunables=no
+      ProtectKernelModules=no
+      ExecStartPost=/usr/local/bin/.start-quota-wrapper
+
+- name: Reload jupyterhub service
+  become: true
+  systemd:
+    state: restarted
+    name: jupyterhub
+    daemon_reload: true
+
+- name: Set config options
+  become: true
+  shell: "{{ item }}"
+  with_items:
+    - tljh-config set auth.NativeAuthenticator.check_common_password True
+    - tljh-config set auth.NativeAuthenticator.minimum_password_length 6
+    - tljh-config set auth.type nativeauthenticator.NativeAuthenticator
+    - tljh-config set auth.NativeAuthenticator.ask_email_on_signup True
+    - tljh-config set auth.NativeAuthenticator.allowed_failed_logins 5
+    - tljh-config set limits.memory 24G
+    - tljh-config set limits.cpu 4
+    - tljh-config set services.cull.timeout 3600
+    - tljh-config set quota 2G
+    - tljh-config set user_environment.default_app jupyterlab
+
+- name: Increase spawner timeout
+  become: true
+  copy:
+    dest: /opt/tljh/config/jupyterhub_config.d/spawner.py
+    content: |
+      c.Spawner.http_timeout = 60
+      c.Spawner.start_timeout = 60
+
+- name: Create /usr/local/etc/jupyter
+  file:
+    path: /usr/local/etc/jupyter
+    state: directory
+  become: true
+
+- name: Set kernel naming scheme in jupyter_config.json
+  become: true
+  copy:
+    dest: /usr/local/etc/jupyter/jupyter_config.json
+    content: |
+      {
+        "CondaKernelSpecManager": {
+          "name_format": "conda: {environment}",
+          "env_filter": "^/opt/tljh/user$"
+        }
+      }
+
+- name: Reload config
+  become: true
+  shell: tljh-config reload
+
+- shell: /opt/tljh/user/bin/mamba clean -q -y --all
+  become: true
+
+- name: Install additional packages
+  become: true
+  shell: "/opt/tljh/user/bin/mamba install -q -y -n base -c conda-forge {{ item }}"
+  with_items:
+    - nb_conda_kernels
+    - numpy
+    - scipy
+    - matplotlib
+    - astropy
+    - ipykernel
+
+- shell: /opt/tljh/user/bin/mamba clean -q -y --all
+  become: true
+
+- name: Create jupyterhub-admins group
+  become: true
+  group:
+    name: jupyterhub-admins
+    state: present
+
+- name: Add default user (ubuntu) to "jupyterhub-admins" group
+  become: true
+  user:
+    name: '{{ ansible_user }}'
+    groups: jupyterhub-admins
+    append: yes
+
+- name: Get nativeauthenticator TEMPLATE_DIR
+  become: true
+  shell: /opt/tljh/hub/bin/python -c 'from nativeauthenticator.handlers import TEMPLATE_DIR; print(TEMPLATE_DIR)'
+  register: TEMPLATE_DIR
+
+- name: Try to patch nativeauthenticator signup page
+  become: true
+  patch:
+    src: "nativeauthenticator-signup.patch"
+    dest: "{{ TEMPLATE_DIR.stdout }}/signup.html"
+  ignore_errors: true

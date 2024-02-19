@@ -1,0 +1,14 @@
+---
+
+- name: Build TLJH server
+  hosts: all
+  gather_facts: true
+  become: false
+
+  roles:
+    - dependencies
+    - quota
+    - tljh
+    - shared_dir
+    - inputrc
+    - captcha

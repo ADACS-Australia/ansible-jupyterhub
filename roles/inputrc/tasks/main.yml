@@ -1,0 +1,9 @@
+---
+
+- name: Set the useful forward/reverse search history bindings
+  become: true
+  copy:
+    dest: /etc/skel/.inputrc
+    content: |
+      "\e[A": history-search-backward
+      "\e[B": history-search-forward

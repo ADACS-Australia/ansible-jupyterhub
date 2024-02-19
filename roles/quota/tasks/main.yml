@@ -1,0 +1,49 @@
+---
+
+- name: Register UUID of root disk
+  become: true
+  shell:
+    cmd: blkid $(df --output=source / | tail -1) -sUUID -ovalue
+  register: UUID
+
+- name: Check UUID is not blank
+  fail:
+    msg: Couldn't get UUID
+  when: UUID.stdout == ""
+
+- name: Edit fstab
+  become: true
+  mount:
+    src: "UUID={{ UUID.stdout }}"
+    path: /
+    fstype: ext4
+    opts: errors=remount-ro,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0
+    dump: "0"
+    passno: "1"
+    state: mounted
+  register: fstab
+
+- name: Add start-quota script to /usr/local/bin/
+  become: true
+  copy:
+    src: start-quota.sh
+    dest: /usr/local/bin/start-quota
+    mode: '0755'
+
+- name: Add .start-quota-wrapper script to /usr/local/bin/
+  become: true
+  copy:
+    content: |
+      #!/bin/bash -u
+      if grep quota /proc/modules | grep -iwq live; then
+        start-quota
+      fi
+    dest: /usr/local/bin/.start-quota-wrapper
+    mode: '0755'
+
+- name: Tell user how to activate quota on login, if not active
+  become: true
+  copy:
+    src: quota-msg.sh
+    dest: /etc/profile.d/quota-msg.sh
+    mode: '0644'

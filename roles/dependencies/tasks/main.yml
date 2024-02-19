@@ -1,0 +1,25 @@
+---
+
+- name: Install dependencies
+  become: true
+  apt:
+    name:
+      - quota
+      - linux-image-extra-virtual
+      - libssl-dev
+      - libcurl4-openssl-dev
+      - build-essential
+
+- name: Activate quota modules
+  become: true
+  lineinfile:
+    path: /etc/modules
+    line: "quota_v{{ item }}"
+  with_items:
+    - 1
+    - 2
+
+- name: Reboot to ensure the quota kernel modules are loaded
+  become: true
+  when: ansible_connection != "local"
+  reboot:

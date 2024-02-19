@@ -1,0 +1,18 @@
+@@ -30,7 +30,7 @@
+ {% block login %}
+ <div id="login-main" class="container">
+     <form action="{{post_url}}" method="post" role="form">
+-        <div class="auth-form-header">
++        <div class="auth-form-header" style="background:#1c9c3e;">
+             Sign Up
+         </div>
+         <div class='auth-form-body'>
+@@ -64,7 +64,7 @@
+ 		</input>
+ 	    </span><br/>
+ 	    {% endif %}
+-            <input type="submit" id="signup_submit" class='btn btn-jupyter' value='Create User' tabindex="3"
++            <input type="submit" id="signup_submit" class='btn btn-jupyter' value='Create User' style="background:#1c9c3e;border:0;" tabindex="3"
+ 	    {% if tos %}
+ 	    disabled
+ 	    {% endif %}

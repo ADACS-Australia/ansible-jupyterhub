@@ -1,0 +1,16 @@
+---
+
+- name: Add enable-captcha script to /usr/local/bin/
+  become: true
+  copy:
+    src: enable-captcha.sh
+    dest: /usr/local/bin/enable-captcha
+    mode: '0755'
+    owner: root
+
+- name: Tell user how to enable captcha on login, if not already enabled
+  become: true
+  copy:
+    src: captcha-msg.sh
+    dest: /etc/profile.d/captcha-msg.sh
+    mode: '0644'
