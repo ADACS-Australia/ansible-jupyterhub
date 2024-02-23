@@ -1,6 +1,9 @@
 # Ansible playbook for setting up a server with "The Littlest JupyterHub"
 
-Note, the ansible playbook is used by https://github.com/ADACS-Australia/murano-jupyterhub. It is a Murano package, which automatically creates a server on the Nectar cloud, runs the playbook, and creates the first admin user.
+Note, the ansible playbook is used by:
+  - https://github.com/ADACS-Australia/murano-jupyterhub a Murano package, which automatically creates a server on the Nectar cloud, runs the playbook, and creates the first admin user.
+  - https://github.com/ADACS-Australia/openstack-tljh a packer builder to create an openstack image with the server already installed.
+
 
 # Useful stuff (once the server is up)
 ## Creating the 1st admin user
