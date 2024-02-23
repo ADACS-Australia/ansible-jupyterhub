@@ -6,11 +6,9 @@ fi
 
 errcode=0
 
-echo "---> Enabling quotas on: $(echo /dev/vd[a-z]1)"
-for DEV in $(ls /dev/vd[a-z]1); do
-  mount -o remount "$DEV" || ((++errcode))
-done
+echo "---> Enabling quotas:"
 
+mount -o remount -a || ((++errcode))
 quotaoff -a        || ((++errcode))
 quotacheck -acvugm || ((++errcode))
 quotaon -avug      || ((++errcode))

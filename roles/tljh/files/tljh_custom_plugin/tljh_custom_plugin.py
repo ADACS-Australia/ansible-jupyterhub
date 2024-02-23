@@ -21,14 +21,19 @@ def tljh_new_user_create(username):
         quota = '2G'
 
     print('Setting quota for user: {user}\n'.format(user=username), flush=True)
+    
     try:
-        p = subprocess.run(['setquota', '-a', '-u', username, quota, quota, '0' ,'0'], check=True)
-        subprocess.check_call(['quota','-us', username])
-    except:
-        print(p.stderr, flush=True)
+        subprocess.check_call(['setquota', '-a', '-u', username, quota, quota, '0' ,'0'])
+    except subprocess.CalledProcessError:
         print('ERROR in {loc}'.format(loc=__file__), flush=True)
         print('Could not edit quota for user {user}'.format(user=username), flush=True)
         print('[Quotas may not be enabled on the filesystem]', flush=True)
+    
+    try:
+        subprocess.check_call(['quota','-us', username])
+    except subprocess.CalledProcessError:
+        print("ERROR: could not show quota for {user}".format(user=username), flush=True)
+
 
 @hookimpl
 def tljh_custom_jupyterhub_config(c):
